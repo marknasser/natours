@@ -12,9 +12,9 @@ const {
 
 const router = express.Router(); // [1]create route to use as a sub app
 
-router.param('id', checkID); // a middle where for ching the id before any of the resonses
+//router.param('id', checkID); // a middle where for ching the id before any of the resonses
 
-router.route('/').get(getAllTours).post(checkBody, createTour);
+router.route('/').get(getAllTours).post(createTour);
 router.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
 
 module.exports = router;

@@ -1,19 +1,17 @@
 const express = require('express');
-const fs = require('fs');
+
 const {
   getAllTours,
   createTour,
   getTour,
   updateTour,
   deleteTour,
-  checkID,
-  checkBody,
+  aliasTopTours,
 } = require('../controllers/tourControllers');
 
 const router = express.Router(); // [1]create route to use as a sub app
 
-//router.param('id', checkID); // a middle where for ching the id before any of the resonses
-
+router.route('/top-5-cheap').get(aliasTopTours, getAllTours); // a middle where for manipulate the req.query in order to create an Alias route for a common request
 router.route('/').get(getAllTours).post(createTour);
 router.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
 

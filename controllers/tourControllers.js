@@ -1,5 +1,6 @@
 const fs = require('fs');
 
+//reading local file from file system
 const tours = JSON.parse(
   fs.readFileSync('${__dirname}/../dev-data/data/tours-simple.json', 'utf-8')
 );

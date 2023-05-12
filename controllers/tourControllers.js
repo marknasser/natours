@@ -1,58 +1,15 @@
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 exports.getAllTours = async (req, res) => {
   try {
-    // BUILD QUERY
-    // 1A) Filtering
-
-    const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields']; //some parameters are't implemented yet
-    excludedFields.forEach((el) => delete queryObj[el]);
-
-    // 2B) Advanced filtering
-    let queryString = JSON.stringify(queryObj);
-    queryString = queryString.replace(
-      /\b(gte|gt|lte|lt)\b/g,
-      (match) => `$${match}`
-    );
-
-    let query = Tour.find(JSON.parse(queryString)); //{difficulty:'easy' , duration:{$gte:5}}
-
-    // 2) Sorting
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      //127.0.0.1:8000/api/v1/tours?sort=price,-ratingsAverage
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
-    }
-
-    // 3) Field Limiting
-    if (req.query.fields) {
-      //127.0.0.1:8000/api/v1/tours?fields=name,duration,price
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
-    // 4) Pagination
-    const page = +req.query.page || 1;
-    const limit = +req.query.limit || 100;
-    const skippedAmount = (page - 1) * limit;
-    query = query.skip(skippedAmount).limit(limit);
-
-    if (req.query.page) {
-      const numTours = await Tour.countDocuments();
-      const maxPages = numTours / limit;
-      // if (page > maxPages) {
-      // }
-      if (skippedAmount >= numTours)
-        throw new Error('This Page Does Not exist !');
-    }
-
     // EXECUTE QUERY
-    const tours = await Tour.find(query);
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const tours = await features.query;
     // const tours = await Tour.find()
     //   .where('duration')
     //   .equals(5)
@@ -141,7 +98,8 @@ exports.aliasTopTours = (req, res, next) => {
   req.body  =>> body prop gonna be available on req because of middleware
 
   __Model
-  calling model functions (find , findOne) returns a promise of a query object which has a lot of methods at its prototype that u can chain then to create a complex query object ..... then you can await the promise of that entire query
+  calling model functions (find , findOne) returns a promise of a query object which has a lot of methods at its prototype
+   that u can chain them to create a complex query object to handel all the features ..... then you can await the promise of that entire query
 
   __parameters 
   "/api/v1/tours/?duration=5&difficulty=easy"
@@ -150,30 +108,6 @@ req.query = {duration: '5', difficulty:'easy'}
 "/api/v1/tours/?duration[gte]=5&difficulty=easy"
 req.query = { difficulty: 'easy', duration: { gte: '5' } }
 { difficulty: 'easy', duration: { '$gte': '5' } } after replace the operators
+
+____
   */
-
-/*
- const tours = JSON.parse(
-   fs.readFileSync('${__dirname}/../dev-data/data/tours-simple.json', 'utf-8')
-   );
-   
-   const newId = tours[tours.length - 1].id + 1;
-   const newTour = Object.assign({ id: newId }, req.body);
-   tours.push(newTour);
-      fs.writeFile(
-        `${__dirname}/../dev-data/data/tours-simple.json`,
-        JSON.stringify(tours),
-        (err, data) => {
-          res.status(201).json({ status: 'success', data: { tour: newTour } }); //201 stands for created
-        }
-      );
-    */
-
-/*
-   exports.checkID = (req, res, next, val) => {
-     // if (val > tours.length) {
-       //   return res.status(404).json({ status: 'fail', message: 'invalid id' });
-       // }
-       next();
-      };
-      */

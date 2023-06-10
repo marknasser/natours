@@ -36,7 +36,7 @@ exports.createTour = async (req, res) => {
     const newTour = await Tour.create(req.body); // here we call the method directly on the model
     res.status(201).json({ status: 'success', data: { tour: newTour } }); //201 stands for created
   } catch (error) {
-    res.status(400).json({ status: 'fail', message: 'sadasd' });
+    res.status(400).json({ status: 'fail', message: error.message });
   }
 };
 
@@ -89,6 +89,78 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
+exports.getTourStats = async (req, res) => {
+  try {
+    // we manipulate data in steps ... we pass in an array of so-called stages
+    // group allows as to group documents together using accumulator
+    // model.find() returns query   .....   model.aggregate() returns aggregation object
+    const stats = await Tour.aggregate([
+      { $match: { ratingsAverage: { $gte: 4.5 } } },
+      {
+        $group: {
+          // _id: null, //what we want group by and null because we want every thing in one group
+          _id: { $toUpper: '$difficulty' },
+          // _id: '$ratingsAverage',
+          numTours: { $sum: 1 },
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      //het we just have these values {avg,..} the core values are gone you can only use the values of prev stage
+      { $sort: { avgRating: 1 } },
+      // { $match: { _id: { $ne: 'EASY' } } },
+      // { $match: { numRatings: { $ne: 41 } } },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      requestedAt: req.requestTime,
+      data: { stats },
+    });
+  } catch (error) {
+    res.status(404).json({ status: 'fail', message: error });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year;
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lt: new Date(`${+year + 1}-01-01`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numTourStarts: { $sum: 1 },
+          tours: { $push: '$name' },
+        },
+      },
+      { $addFields: { month: '$_id' } },
+      { $project: { _id: 0 } },
+      { $sort: { numTourStarts: -1 } },
+      // { $limit: 12 },
+    ]);
+    res.status(200).json({
+      status: 'success',
+      requestedAt: req.requestTime,
+      data: { plan },
+    });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', message: error.message });
+  }
+};
 /* NOTEs
   __dealing with url parameters
   .we can expect as many vars/parameters as you can and also u can make it optional by adding "?" at the end
@@ -109,5 +181,5 @@ req.query = {duration: '5', difficulty:'easy'}
 req.query = { difficulty: 'easy', duration: { gte: '5' } }
 { difficulty: 'easy', duration: { '$gte': '5' } } after replace the operators
 
-____
+____mongodb aggregation pipeline : define a pipeline that all documents from a certain collection go through where they are processed step by step in order to transform them into aggregated results (avreages ,minimum , maxmimum)
   */

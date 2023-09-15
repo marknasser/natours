@@ -36,6 +36,7 @@ exports.createTour = (req, res) => {
   // const newTour = Object.assign({ id: newId }, req.body);
   const newTour = { ...req.body, id: newId };
   tours.push(newTour);
+  //we are in callback funck runs in event loop and we shoyld never block the event loop
   fs.writeFile(
     `${__dirname}/../dev-data/data/tours-simple.json`,
     JSON.stringify(tours),
@@ -56,7 +57,7 @@ exports.updateTour = (req, res) => {
 
   const x = tours.findIndex((el) => el.id === id);
   // tours[x] = { ...tours[x], ...req.body };
-  // fs.writeFile(
+  // fs.writeFile(z
   //   `${__dirname}/dev-data/data/tours-simple.json`,
   //   JSON.stringify(tours),
   //   (err) => {}

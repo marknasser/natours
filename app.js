@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(express.json()); // a builtin middleware methods that allows us to access to the body of the request
-app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that public folder that we defined and set that folder to the root
+app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that "public" folder that we defined and set that folder to the root so we donthave to do > 1027.0.0.1:3000/publick/pverview.html   >>>just >>> 1027.0.0.1:3000/pverview.html
 
 app.use((req, res, next) => {
   console.log('custom middleware func 1');

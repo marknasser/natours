@@ -10,7 +10,7 @@ const {
   checkBody,
 } = require('../controllers/tourControllers');
 
-const router = express.Router(); // [1]create route to use as a sub app
+const router = express.Router(); // [1]create router to use as a sub app
 
 router.param('id', checkID); // a middle where for ching the id before any of the resonses
 
@@ -28,6 +28,7 @@ app.patch(`/api/v1/tours/:id/`, updateTour);
 app.delete('/api/v1/tours/:id', deleteTour);
 
 app.route('/api/v1/tours).get().post()
+app.route('/api/v1/tours/:id).get().patch().delete()
 */
 // app.use((req, res, next) => {
 //   // this method will not get executed while calling the URL of get all tours because in the route we sending back the request which means that the req/res cycle has been finished

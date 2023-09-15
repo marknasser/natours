@@ -1,8 +1,9 @@
-// it's a good practice to have all the files related to express together in one file and everything related to server in anther main file to be the start point
+// it's a good practice to have all the files related to express together in one file and everything related to server in anther main file to be the starting point and where we listen to our server
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' }); // we have to define it before importing the app
 const app = require('./app');
+
 console.log(app.get('env')); // the environment of app
 //console.log(process.env); // node use most of these environment variables internally   for ex node.js use NODE_ENV=development for determine that it's development or production environment but i have to manually use it
 

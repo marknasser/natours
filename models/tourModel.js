@@ -23,6 +23,7 @@ const tourSchema = new mongoose.Schema(
     difficulty: {
       type: String,
       required: [true, 'A tour mush have a difficulty'],
+      // enum: ['easy', 'medium', 'difficult'],
       enum: {
         values: ['easy', 'medium', 'difficult'],
         message: 'Difficulty is either: easy, medium, difficult',
@@ -40,7 +41,8 @@ const tourSchema = new mongoose.Schema(
       type: Number,
       validate: {
         validator: function (val) {
-          //this has access to the input value only works with creation (when we create a new document)
+          //that callback func has access to the input value
+          // "this" only works with creation (when we create a new document) not for update
           return val < this.priceDiscount;
         },
         messages: 'Discount price ({VALUE}) should be below the regular price',
@@ -48,7 +50,7 @@ const tourSchema = new mongoose.Schema(
     },
     summary: {
       type: String,
-      trim: true,
+      trim: true, //ONLY FOR STRINGS
       required: [true, 'A tour mush have a description'],
     },
     description: {
@@ -65,25 +67,30 @@ const tourSchema = new mongoose.Schema(
     secretTour: { type: Boolean, default: false },
   },
   {
+    //schema option object
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
+/*virtual Property
+:properties that i define to schema put it will not be saved to database for save space>>for EX>> it holds transformation data from km:meter  hours:minuit
+we can't use viruals in a uery like Tour.find({durationWeeks:1}) because they are not a part of the database
+*/
+
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
-}); //this property will be created every time we get some data out of the database   ....... this =current doc
+}); //this property will be created every time we get some data out of the database   ....... this = current doc ...thats why we'r not using arrow
 
+//_________DOCUMENT MIDDLEWARE
 tourSchema.pre('save', function (next) {
-  //DOCUMENT MIDDLEWARE: runs before only .save() and .create()  >not> .insertMany()
-  //will be called before an actual doc is saved to database
-  //we have access to the document which is being proceeded and in that middle ware the doc is being saved
+  // console.log('pre 1');
+  //DOCUMENT MIDDLEWARE: runs before only .save() and .create()  >not> .insertMany() or update
+  //will be called before an actual doc is being saved to database and we we have access to this document
   // console.log(this);
   this.sulg = slugify(this.name, { lower: true });
   next();
 });
-
-//_____QUERY MIDDLEWARE
 
 // tourSchema.pre('save', function (next) {
 //   console.log('pre 2');
@@ -91,14 +98,16 @@ tourSchema.pre('save', function (next) {
 // });
 
 // tourSchema.post('save', function (doc, next) {
-//   //it is called after all the pre middleware func get called
+//   //it is called after all the pre middleware funcs get called
 //   console.log('post', doc);
 //   next();
 // });
 
+//_____QUERY MIDDLEWARE
+
 // tourSchema.pre('find', function (next) {
 tourSchema.pre(/^find/, function (next) {
-  // the only difference is that this key work>> points to >> the current query
+  // the only difference is that this key work>> points to >> the current query object
   this.find({ secretTour: { $ne: true } }); //filter out
 
   this.start = Date.now();
@@ -106,27 +115,27 @@ tourSchema.pre(/^find/, function (next) {
 });
 
 tourSchema.post(/^find/, function (docs, next) {
-  //will be called after the query get executed
+  //will be called after the query got executed that's why we can access the doc >> the query has finished
   console.log(`query took ${Date.now() - this.start} milliseconds!`);
   // console.log(docs);
   next();
 });
 
+//___________aggregate MIDDLEWARE
+
 tourSchema.pre('aggregate', function (next) {
-  //this = aggregation object
+  //this = current aggregation object
+  //this.pipeline() = current pipeline object(the array) of the current aggregation object
   console.log(
     this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
   );
+  //avoid using the secret tour at the aggregation pippeline
   next();
 });
 
 const Tour = mongoose.model('Tour', tourSchema);
 module.exports = Tour;
 // mongo can parse a date from time stamp or any other forms if not it will send an error
-/*virtual Property
-:properties that i define to schema put it will not be saved to database >>for EX>> it holds transformation data from km:meter  hours:minuit
-we can't use viruals in a uery like Tour.find({durationWeeks:1}) because they are not a part of the database
-*/
 
 /*  mongoose middleware  called [pre and post hooks]
 > we use it to make something happens between two events for example each time a new doc is saved we can run a func between the save command and the actual saving  or after the actual saving >>so before or after a certain event
@@ -143,3 +152,10 @@ and "sanitization" which is making sure there isn't malicious code injects at th
 
 custom validators: a validator is func which returns either true or false
 */
+
+/* Model: like a blueprint to create our document  and alsto to (crud on them)
+schema :to create a Model we need to create a schema , so create model out of mongoose schema 
+we use it to to describe our data ,set default value  , validate the data
+*/
+// schema: is where we model our data >> then take that schema and create model out of it
+//Model:is a wraper around schema which allows us to interface  with data base in order to (create /delete..  )

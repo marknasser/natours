@@ -8,6 +8,7 @@ const DB = process.env.DATABASE.replace(
   '<password>',
   process.env.DATABASE_PASSWORD
 );
+console.log(DB);
 mongoose
   // .connect(process.env.DATABASE_LOCAL, {
   .connect(DB, {
@@ -37,16 +38,14 @@ and as a convention we could create 'config.env' file to set our environment var
 for ex: we might use different databases for development and for testing so we could define one variable for each and then activate the right database according to the environment 
 */
 
-/* model: like a blueprint to create our document 
-schema :to create a model we need to create a schema , so create model out of mongoose schema 
-we use it to to describe our data ,set default value  , validate the data
-*/
-
 // console.log(app.get('env')); // the environment of app
 //console.log(process.env); // node use most of these environment variables internally   for ex node.js use NODE_ENV=development for determine that it's development or production environment but i have to manually use it
 
-/*const testTour = new Tour({
-  //is an instance document of a tour model and it has method ..
+/*
+//a new Document out of a Tour Modal
+//is an instance document of a tour model and it has method ..
+//.save()  >> save ot in the tours collection in the database
+const testTour = new Tour({
   name: 'The Park Camper',
   price: 997,
 });

@@ -4,18 +4,25 @@ const APIFeatures = require('../utils/apiFeatures');
 exports.getAllTours = async (req, res) => {
   try {
     // EXECUTE QUERY
+    /* [1]using filter object like mongosh
+    const tours = await Tour.find(req.query);
+    */
+
     const features = new APIFeatures(Tour.find(), req.query)
       .filter()
       .sort()
       .limitFields()
       .paginate();
-    const tours = await features.query;
-    // const tours = await Tour.find()
-    //   .where('duration')
-    //   .equals(5)
-    //   .where('difficulty')
-    //   .equals('easy');
 
+    /* [2]using mongoose methods
+   const tours = await Tour.find()
+   .where('duration')
+   .lte(5)
+   .where('difficulty')
+   .equals('easy');
+   */
+
+    const tours = await features.query;
     // SEND RES
     res.status(200).json({
       status: 'success',
@@ -43,7 +50,7 @@ exports.createTour = async (req, res) => {
 exports.getTour = async (req, res) => {
   try {
     const specificTour = await Tour.findById(req.params.id);
-    // Tour.findOne({ _id: req.params.id})
+    // Tour.findOne({ _id: req.params.id}) //mongo itself
 
     res.status(200).json({
       status: 'success',
@@ -94,9 +101,11 @@ exports.getTourStats = async (req, res) => {
     // we manipulate data in steps ... we pass in an array of so-called stages
     // group allows as to group documents together using accumulator
     // model.find() returns query   .....   model.aggregate() returns aggregation object
+
     const stats = await Tour.aggregate([
       { $match: { ratingsAverage: { $gte: 4.5 } } },
       {
+        //allows us to group docs together using an acculmlator>> using _id prop
         $group: {
           // _id: null, //what we want group by and null because we want every thing in one group
           _id: { $toUpper: '$difficulty' },
@@ -109,8 +118,8 @@ exports.getTourStats = async (req, res) => {
           maxPrice: { $max: '$price' },
         },
       },
-      //het we just have these values {avg,..} the core values are gone you can only use the values of prev stage
-      { $sort: { avgRating: 1 } },
+      //het we just have these fields {numRatings,..} the core fields are gone you can only use the fields and valus of prev stage
+      { $sort: { avgRating: 1 } }, //1for assending
       // { $match: { _id: { $ne: 'EASY' } } },
       // { $match: { numRatings: { $ne: 41 } } },
     ]);
@@ -128,6 +137,7 @@ exports.getTourStats = async (req, res) => {
 exports.getMonthlyPlan = async (req, res) => {
   try {
     const year = req.params.year;
+
     const plan = await Tour.aggregate([
       {
         $unwind: '$startDates',
@@ -152,6 +162,7 @@ exports.getMonthlyPlan = async (req, res) => {
       { $sort: { numTourStarts: -1 } },
       // { $limit: 12 },
     ]);
+
     res.status(200).json({
       status: 'success',
       requestedAt: req.requestTime,

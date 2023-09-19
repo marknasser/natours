@@ -2,6 +2,9 @@
 const express = require('express');
 const morgan = require('morgan');
 
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorControllers.js');
+
 const tourRouter = require('./routes/tourRouter');
 const userRouter = require('./routes/userRouter');
 
@@ -16,11 +19,7 @@ app.use(express.json()); // a builtin middleware methods that allows us to acces
 app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that public folder that we defined and set that folder to the root
 
 app.use((req, res, next) => {
-  console.log('custom middleware func 1');
-  next(); // at the end of any middleware  fun should call if we not the app will stuck at this point
-});
-
-app.use((req, res, next) => {
+  // at the end of any middleware  fun should call if we not the app will stuck at this point
   // a middleware func that used to manipulate the req object
   req.requestTime = new Date().toISOString();
   next();
@@ -29,6 +28,24 @@ app.use((req, res, next) => {
 // implement the mounting process for ROUTS structure
 app.use('/api/v1/tours', tourRouter); // [2]use them as a middleware func that will be executed at specific route
 app.use('/api/v1/users', userRouter);
+
+app.all('*', (req, res, next) => {
+  // res.status(404).json({
+  //   status: 'fail',
+  //   message: `Can't find ${req.originalUrl} on this server`,
+  // });
+
+  /*
+  const err = new Error(`Can't find ${req.originalUrl} on this server`);
+  err.status = 'fail';
+  err.statusCode = 404;
+  next(err);
+  */
+  //by passing any argument to the next() express automatically recognaizes that is an error so>> it will skip all the middlware at the stack and jump to the error handling middleware
+  next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
+});
+
+app.use(globalErrorHandler);
 
 module.exports = app;
 

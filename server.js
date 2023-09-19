@@ -1,6 +1,13 @@
 // it's a good practice to have all the files related to express together in one file and everything related to server in anther main file to be the start point
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+
+process.on('uncaughtException', (err) => {
+  //uncauthexptions : all the errors in our syncrouns code but not handeld any where
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
 dotenv.config({ path: './config.env' }); // we have to define it before importing the app
 const app = require('./app');
 
@@ -23,9 +30,18 @@ mongoose
 
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   // a function will be called when the server start listing
   console.log(`App running on port ${port}...`);
+});
+
+process.on('unhandledRejection', (err) => {
+  //here we handel unhandledRejection promises that occure in assyncrous code which not previsously handeld
+  console.log(err.name, err.message);
+  console.log('unhandledRejection !!!!!');
+  server.close(() => {
+    process.exit(1);
+  });
 });
 
 /*Environment Variables : are global variables that are used to define the environment in which a node app is running

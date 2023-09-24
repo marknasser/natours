@@ -13,7 +13,21 @@ const signToken = (id) => {
 };
 
 const createSendToken = (currentUser, status, res) => {
+  //cookie : is small piece of text that the server can send to client ... and when client recives a cokiie the brwoswer will automatically stored it and then it will send back along with all the future requests to the same server
+
   const token = signToken(currentUser._id);
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 100
+    ),
+    // secure: true, //we're using https >> cooki will onlt be sent over an encrypted connection
+    httpOnly: true, //cookie canot be accessed  or modified by any why by the browser
+  };
+
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
+  currentUser.password = undefined; // that should remove the pass only from the output
   res.status(status).json({
     status: 'success',
     token,

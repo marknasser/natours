@@ -1,23 +1,67 @@
 //___________express
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorControllers.js');
 
 const tourRouter = require('./routes/tourRouter');
+
 const userRouter = require('./routes/userRouter');
 
 const app = express(); // is a Function when calling will add a punch of methods to the "app" var
-// console.log('hereeeeeeeee', process.env.NODE_EN V);
-// MIDDLEWARES
+
+//Global MIDDLEWARES
+//[1]set Security https headers
+app.use(helmet());
+//[2]Development logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev')); // a third party middleware func for show the request data on the console
 }
 
-app.use(express.json()); // a builtin middleware methods that allows us to access to the body of the request
-app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that public folder that we defined and set that folder to the root
+//[3]]limit request from same IP
+//implemnting Rate Limiting: as a global middleware function to prevent the same IP from making to manny reqs to our API >>>> that helps us to preventing attacks like [DOS and Broute Force]
+const Limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too may requsts from this IP , please try again in an hour',
+});
+app.use('/api', Limiter); //apply this limiter onlt for this route which applys it on all the routs start with /api
 
+//[4] body parser: reading data from body into req.body
+app.use(
+  express.json({
+    limit: '10kb',
+  })
+); // a builtin middleware methods that allows us to access to the body of the request
+
+//Data sanitization:means to clean all the data that comes to app from melious code
+//[5] Data sanitization againes nosql query injection
+app.use(mongoSanitize());
+//[6] Data sanitization againes xss
+app.use(xss());
+
+//[7]prvent parameter pollution:when user duplicate fields or any thing this uses only the last one
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsAverage',
+      'ratingsQuantity',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  })
+);
+//[8]servring static files
+app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that public folder that we defined and set that folder to the root
+//[9] test middleware
 app.use((req, res, next) => {
   // at the end of any middleware  fun should call if we not the app will stuck at this point
   // a middleware func that used to manipulate the req object

@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 
 process.on('uncaughtException', (err) => {
   //uncauthexptions : all the errors in our syncrouns code but not handeld any where
-  console.log(err.name, err.message);
+  console.log('unexpected erorr!!!!');
+  console.log(err.name, err.message, err.stack);
   process.exit(1);
 });
 
@@ -37,8 +38,8 @@ const server = app.listen(port, () => {
 
 process.on('unhandledRejection', (err) => {
   //here we handel unhandledRejection promises that occure in assyncrous code which not previsously handeld
-  console.log(err.name, err.message);
   console.log('unhandledRejection !!!!!');
+  console.log(err.name, err.message, err.stack);
   server.close(() => {
     process.exit(1);
   });

@@ -9,7 +9,7 @@ const tourRouter = require('./routes/tourRouter');
 const userRouter = require('./routes/userRouter');
 
 const app = express(); // is a Function when calling will add a punch of methods to the "app" var
-// console.log('hereeeeeeeee', process.env.NODE_ENV);
+// console.log('hereeeeeeeee', process.env.NODE_EN V);
 // MIDDLEWARES
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev')); // a third party middleware func for show the request data on the console
@@ -22,6 +22,7 @@ app.use((req, res, next) => {
   // at the end of any middleware  fun should call if we not the app will stuck at this point
   // a middleware func that used to manipulate the req object
   req.requestTime = new Date().toISOString();
+  // console.log(req.headers);
   next();
 });
 

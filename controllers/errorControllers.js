@@ -21,8 +21,13 @@ module.exports = (err, req, res, next) => {
       //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
     }
     if (error.name === 'ValidationError') {
-      error = handleValidationErrorsDB(error);
-      //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
+      error = handleValidationErrorsDB(error); //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
+    }
+    if (error.name === 'JsonWebTokenError') {
+      error = handleJsonWebTokenErrorJWT(error); //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
+    }
+    if (error.name === 'TokenExpiredError') {
+      error = handleTokenExpiredErrorJWT(error); //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
     }
     sendErrorPro(error, res);
     // console.log(error);
@@ -45,6 +50,15 @@ function handleValidationErrorsDB(error) {
   const errors = Object.values(error.errors).map((el) => el.message);
   const message = `invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
+}
+
+function handleJsonWebTokenErrorJWT(error) {
+  const message = ` ${error.message} - invalid token. please log in again!`;
+  return new AppError(message, 401);
+}
+function handleTokenExpiredErrorJWT(error) {
+  const message = ` ${error.message} - invalid token. please log in again!`;
+  return new AppError(message, 401);
 }
 
 function sendErrorDev(err, res) {

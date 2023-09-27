@@ -10,9 +10,23 @@ const {
   getTourStats,
   getMonthlyPlan,
 } = require('../controllers/tourControllers');
+const reviewController = require('../controllers/reviewController');
+const reviewRouter = require('./reviewRouter');
 
 const { protect, restrictTo } = require('../controllers/authControllers');
 const router = express.Router(); // [1]create route to use as a sub app
+
+// router
+//   .route('/:tourId/reviews')
+//   .post(protect, restrictTo('user'), reviewController.createReview);
+
+// nested Route
+// post /tour/:ToureId/reviews
+// get /tour/:ToureId/reviews
+// get /tour/:ToureId/reviews/:reviewID
+//express feature merge param
+
+router.use('/:tourId/reviews', reviewRouter);
 
 router.route('/top-5-cheap').get(aliasTopTours, getAllTours); // a middle where for manipulate the req.query in order to create an Alias route for a common request
 router.route('/tour-stats').get(getTourStats);

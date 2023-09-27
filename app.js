@@ -11,8 +11,8 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorControllers.js');
 
 const tourRouter = require('./routes/tourRouter');
-
 const userRouter = require('./routes/userRouter');
+const reviewRouter = require('./routes/reviewRouter');
 
 const app = express(); // is a Function when calling will add a punch of methods to the "app" var
 
@@ -59,6 +59,15 @@ app.use(
     ],
   })
 );
+app.use((req, res, next) => {
+  // Set CORS headers to allow requests from any origin
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
+  next();
+});
 //[8]servring static files
 app.use(express.static(`${__dirname}/public`)); // so when we open a URL that it can't find in any of routs it will then look in that public folder that we defined and set that folder to the root
 //[9] test middleware
@@ -73,6 +82,7 @@ app.use((req, res, next) => {
 // implement the mounting process for ROUTS structure
 app.use('/api/v1/tours', tourRouter); // [2]use them as a middleware func that will be executed at specific route
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 app.all('*', (req, res, next) => {
   // res.status(404).json({

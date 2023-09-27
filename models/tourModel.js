@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
+const User = require('./userModel');
 
 const tourSchema = new mongoose.Schema(
   {
@@ -65,6 +66,41 @@ const tourSchema = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now(), select: false },
     startDates: [Date],
     secretTour: { type: Boolean, default: false },
+    startLocation: {
+      //mongoDb:supports Geospecial data out of the box >> is data that decrupes places on earth using[longtite and latitude]
+      //GeoJSON : is speciale data format mongoDB uses indorder to declare Geospecial data
+      //we need type, coordinates proprtiese to regonize this object to be GeoJSON
+      type: {
+        //scema type option nested here
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    //inorder to create doc and embed it into another doc we have to declare an array
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    // guides: Array,
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     //schema option object
@@ -82,6 +118,13 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 }); //this property will be created every time we get some data out of the database   ....... this = current doc ...thats why we'r not using arrow
 
+// virtual populate : it's amongoose featre >> we can actualy populate the tour with reviews >> so we can get access to all reviews for a certain tour without having this endless array of reviews Id >> it;s abit like virtual field but with populate
+
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'tour',
+});
 //_________DOCUMENT MIDDLEWARE
 tourSchema.pre('save', function (next) {
   // console.log('pre 1');
@@ -92,9 +135,12 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
-// tourSchema.pre('save', function (next) {
-//   console.log('pre 2');
+// tourSchema.pre('save', async function (next) {
+//   const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+//   // guidesPromises is array of promises now so we have to run them
+//   this.guides = await Promise.all(guidesPromises);
 //   next();
+//   //we are not gonna implement embbedi here beacuse user alwasys updates so we have to do alote of work update it into User itself then check if embedded and if so update embedded doc into Tour also and that is not good at allll
 // });
 
 // tourSchema.post('save', function (doc, next) {
@@ -111,6 +157,14 @@ tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } }); //filter out
 
   this.start = Date.now();
+  next();
+});
+
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
   next();
 });
 

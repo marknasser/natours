@@ -1,8 +1,6 @@
-const { Model } = require('mongoose');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const APIFeatures = require('../utils/apiFeatures');
-
 //Global Handler Functions For CRUD operations
 
 exports.deleteOne = (Model) =>
@@ -65,6 +63,7 @@ exports.getAll = (Model) =>
       .limitFields()
       .paginate();
 
+    // const docs = await features.query.explain();
     const docs = await features.query;
     // SEND RES
     res.status(200).json({

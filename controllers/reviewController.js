@@ -4,10 +4,15 @@ const Review = require('../models/reviewModel');
 const Tour = require('../models/tourModel');
 const factory = require('./handlerFactory');
 
-const setTourUserIds = (req, res, next) => {
+const setTourUserIds = async (req, res, next) => {
   //middleware to set the tour and the user to the req if not provided
   if (!req.body.tour) req.body.tour = req.params.tourId;
   if (!req.body.user) req.body.user = req.user.id;
+
+  // //if the tour.reviews don't have a review from a user with that id
+  // const tour = await Tour.findById(req.params.tourId);
+  // const isExist = tour.reviews.findIndex((rev) => (rev.user = req.user.id));
+
   next();
 };
 const createReview = factory.createOne(Review);

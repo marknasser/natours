@@ -9,6 +9,8 @@ const {
   aliasTopTours,
   getTourStats,
   getMonthlyPlan,
+  getTourWithin,
+  getDistances,
 } = require('../controllers/tourControllers');
 const reviewController = require('../controllers/reviewController');
 const reviewRouter = require('./reviewRouter');
@@ -43,6 +45,14 @@ router
   .get(getTour)
   .patch(protect, restrictTo('admin', 'lead-guide'), updateTour)
   .delete(protect, restrictTo('admin', 'lead-guide'), deleteTour);
+
+router.route('/distance/:coordinats/unit/:unit').get(getDistances);
+
+router
+  .route('/tours-within/:distance/center/:coordinats/unit/:unit')
+  .get(getTourWithin);
+// /tours-within?distance=233&center=-40,40&unit=ml
+// /tours-within/distance/233/center/-40,40/unit/ml
 
 module.exports = router;
 // ___________ Routs Routing : determine how an application responds to a certain URL request

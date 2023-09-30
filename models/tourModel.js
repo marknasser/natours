@@ -35,6 +35,7 @@ const tourSchema = new mongoose.Schema(
       default: 4.5,
       min: [1, 'Rating must be above 1'],
       max: [5, 'Rating must be below 5'],
+      set: (val) => Math.round(val * 10) / 10, //4.666, 46.666, 4777 /4.7
     },
     ratingsQuantity: { type: Number, default: 0 },
     price: { type: Number, required: [true, 'A tour mush have a price'] },
@@ -108,12 +109,19 @@ const tourSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+/* improving reading docs from our collection by set indexes for specific fields to make the scan process by monoogDB engin takes less time  by scaning only doc that needed in the collection not all*/
+// but we have to study the accsses patterns and know which of our fields are quered the most and set indexx for them >> because index have to update each time the collection is updated
+// so if we have a high read/write ratio colllection we should never set an index for any of its fields
+// 1 for sorting the indexes of the field in ascending order
+// tourSchema.index({ price: 1 });
+tourSchema.index({ price: 1, ratingsAverage: -1 }); //compound index
+tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 /*virtual Property
 :properties that i define to schema put it will not be saved to database for save space>>for EX>> it holds transformation data from km:meter  hours:minuit
 we can't use viruals in a uery like Tour.find({durationWeeks:1}) because they are not a part of the database
 */
-
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 }); //this property will be created every time we get some data out of the database   ....... this = current doc ...thats why we'r not using arrow
@@ -180,9 +188,9 @@ tourSchema.post(/^find/, function (docs, next) {
 tourSchema.pre('aggregate', function (next) {
   //this = current aggregation object
   //this.pipeline() = current pipeline object(the array) of the current aggregation object
-  console.log(
-    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
-  );
+  // console.log(
+  //   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
+  // );
   //avoid using the secret tour at the aggregation pippeline
   next();
 });
@@ -213,3 +221,7 @@ we use it to to describe our data ,set default value  , validate the data
 */
 // schema: is where we model our data >> then take that schema and create model out of it
 //Model:is a wraper around schema which allows us to interface  with data base in order to (create /delete..  )
+
+/* Geospatial Queries
+
+  */

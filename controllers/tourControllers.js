@@ -76,6 +76,66 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
     data: { plan },
   });
 });
+exports.getTourWithin = catchAsync(async (req, res, next) => {
+  const { distance, coordinats, unit } = req.params;
+  const [lat, lng] = coordinats.split(',');
+  if (!lat || !lng) {
+    next(
+      new AppError('Please provide your coordinates in the format lat,lng', 400)
+    );
+  }
+
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+  //geoWithIn:is geospecial operator wich find value within specific geometry
+  //geospatial query
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+  });
+  res.status(200).json({
+    stats: 'success',
+    result: tours.length,
+    data: {
+      data: tours,
+    },
+  });
+});
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { coordinats, unit } = req.params;
+  const [lat, lng] = coordinats.split(',');
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+  if (!lat || !lng) {
+    next(
+      new AppError('Please provide your coordinates in the format lat,lng', 400)
+    );
+  }
+  //geospatial aggregation
+  //$geoNear:it has to be the first stage at the pipline and this is the only geospatial aggregation stage and it requires that at leaset one of ourfields contains geospatial index
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [lng * 1, lat * 1],
+        },
+        distanceField: 'distance',
+        distanceMultiplier: multiplier,
+      },
+    },
+    {
+      $project: {
+        distance: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    stats: 'success',
+    data: {
+      data: distances,
+    },
+  });
+});
 /* NOTEs
   __dealing with url parameters
   .we can expect as many vars/parameters as you can and also u can make it optional by adding "?" at the end

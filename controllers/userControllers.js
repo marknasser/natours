@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const factory = require('./handlerFactory');
 
 const filterObj = (obj, ...allwedFields) => {
   const newObject = {};
@@ -29,7 +30,6 @@ const updateMe = catchAsync(async (req, res, next) => {
   // await currentUser.save(); //i have a bug this should giives me an error because i don't send all the requirments fields -- but it doesnt
 
   const filteredBody = filterObj(req.body, 'name', 'email');
-
   const updateUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true,
@@ -44,7 +44,7 @@ const updateMe = catchAsync(async (req, res, next) => {
 });
 
 const deleteMe = catchAsync(async (req, res, next) => {
-  console.log('you have reated here');
+  //user can only deactive himself _ admin can delete from DB
   await User.findByIdAndUpdate(req.user.id, {
     active: false,
   });
@@ -55,40 +55,21 @@ const deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-const getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
-
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requestTime,
-    results: users.length,
-    data: { users },
-  });
-});
+const getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
 
 const createUser = (req, res) => {
-  res
-    .status(500) // means internal server error
-    .json({ status: 'error', message: 'this route is not yet defined' });
+  res.status(500).json({
+    status: 'error',
+    message: 'This route is not defined! please use /signup',
+  });
 };
-
-const getUser = (req, res) => {
-  res
-    .status(500) // means internal server error
-    .json({ status: 'error', message: 'this route is not yet defined' });
-};
-
-const updateUser = (req, res) => {
-  res
-    .status(500) // means internal server error
-    .json({ status: 'error', message: 'this route is not yet defined' });
-};
-
-const deleteUser = (req, res) => {
-  res
-    .status(500) // means internal server error
-    .json({ status: 'error', message: 'this route is not yet defined' });
-};
+const getUser = factory.getOne(User);
+const getAllUsers = factory.getAll(User);
+const updateUser = factory.updateOne(User);
+const deleteUser = factory.deleteOne(User);
 
 module.exports = {
   updateMe,
@@ -98,4 +79,5 @@ module.exports = {
   getUser,
   updateUser,
   deleteUser,
+  getMe,
 };

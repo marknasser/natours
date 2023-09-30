@@ -1,69 +1,14 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
-const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const catchAsync = require('../utils/catchAsync');
+const factory = require('./handlerFactory');
 
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
-
-  const tours = await features.query;
-  // SEND RES
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requestTime,
-    results: tours.length,
-    data: { tours },
-  });
-});
-
-exports.createTour = catchAsync(async (req, res, next) => {
-  const newTour = await Tour.create(req.body); // here we call the method directly on the model
-  res.status(201).json({ status: 'success', data: { tour: newTour } }); //201 stands for created
-});
-
-exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id).populate('reviews');
-  // Tour.findOne({ _id: req.params.id}) //mongo itself
-  if (!tour) {
-    //we return here becuse otherwise we are trying to send two  response
-    // we call next here because the catchAsync will not catch it so it will not call net there
-    //so by using next here will jupm straigforword to the global handel middlware
-    return next(new AppError('No tour has found with that ID', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requestTime,
-    data: { tour: tour },
-  });
-});
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!tour) {
-    return next(new AppError('No tour has found with that ID', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requestTime,
-    data: { tour: tour },
-  });
-});
-
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  //restfully api commonly to not send any data back to the client
-  const tour = await Tour.findByIdAndDelete(req.params.id);
-  if (!tour) {
-    return next(new AppError('No tour has found with that ID', 404));
-  }
-  res.status(200).json({ status: 'success', data: null });
-});
+exports.getAllTours = factory.getAll(Tour);
+exports.createTour = factory.createOne(Tour);
+exports.updateTour = factory.updateOne(Tour);
+exports.deleteTour = factory.deleteOne(Tour);
+exports.getTour = factory.getOne(Tour, { path: 'reviews' });
 
 exports.aliasTopTours = (req, res, next) => {
   req.query.sort = 'price,-ratingsAverage';
@@ -154,6 +99,69 @@ req.query = { difficulty: 'easy', duration: { gte: '5' } }
 ____mongodb aggregation pipeline : define a pipeline that all documents from a certain collection go through where they are processed step by step in order to transform them into aggregated results (avreages ,minimum , maxmimum)
   */
 
+/*
+// exports.getAllTours = catchAsync(async (req, res, next) => {
+//   const features = new APIFeatures(Tour.find(), req.query)
+//     .filter()
+//     .sort()
+//     .limitFields()
+//     .paginate();
+
+//   const tours = await features.query;
+//   // SEND RES
+//   res.status(200).json({
+//     status: 'success',
+//     requestedAt: req.requestTime,
+//     results: tours.length,
+//     data: { tours },
+//   });
+// });
+
+// exports.createTour = catchAsync(async (req, res, next) => {
+//   const newTour = await Tour.create(req.body); // here we call the method directly on the model
+//   res.status(201).json({ status: 'success', data: { tour: newTour } }); //201 stands for created
+// });
+
+// exports.getTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findById(req.params.id).populate('reviews');
+//   // Tour.findOne({ _id: req.params.id}) //mongo itself
+//   if (!tour) {
+//     //we return here becuse otherwise we are trying to send two  response
+//     // we call next here because the catchAsync will not catch it so it will not call net there
+//     //so by using next here will jupm straigforword to the global handel middlware
+//     return next(new AppError('No tour has found with that ID', 404));
+//   }
+//   res.status(200).json({
+//     status: 'success',
+//     requestedAt: req.requestTime,
+//     data: { tour: tour },
+//   });
+// });
+
+// exports.updateTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+//     new: true,
+//     runValidators: true,
+//   });
+//   if (!tour) {
+//     return next(new AppError('No tour has found with that ID', 404));
+//   }
+//   res.status(200).json({
+//     status: 'success',
+//     requestedAt: req.requestTime,
+//     data: { tour: tour },
+//   });
+// });
+
+// exports.deleteTour  = catchAsync(async (req, res, next) => {
+//   //restfully api commonly to not send any data back to the client
+//   const tour = await Tour.findByIdAndDelete(req.params.id);
+//   if (!tour) {
+//     return next(new AppError('No tour has found with that ID', 404));
+//   }
+//   res.status(200).json({ status: 'success', data: null });
+// });
+*/
 /*
 
 exports.getAllTours = async (req, res, next) => {

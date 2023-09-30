@@ -2,33 +2,39 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Review = require('../models/reviewModel');
 const Tour = require('../models/tourModel');
+const factory = require('./handlerFactory');
 
-const createReview = catchAsync(async (req, res, nex) => {
-  console.log(req.params);
+const setTourUserIds = (req, res, next) => {
+  //middleware to set the tour and the user to the req if not provided
   if (!req.body.tour) req.body.tour = req.params.tourId;
   if (!req.body.user) req.body.user = req.user.id;
+  next();
+};
+const createReview = factory.createOne(Review);
+const getAllReviews = factory.getAll(Review);
+const deleteReview = factory.deleteOne(Review);
+const updateReview = factory.updateOne(Review);
+const getReview = factory.getOne(Review);
 
-  const newReview = await Review.create(req.body);
-  res.status(201).json({
-    status: 'success',
-    data: {
-      review: newReview,
-    },
-  });
-});
+module.exports = {
+  createReview,
+  getAllReviews,
+  deleteReview,
+  updateReview,
+  setTourUserIds,
+  getReview,
+};
 
-const getAllReviews = catchAsync(async (req, res, nex) => {
-  let filter = {};
-  if (req.params.tourId) filter = { tour: req.params.tourId };
-  const reviews = await Review.find(filter);
+// const getAllReviews = catchAsync(async (req, res, nex) => {
+//   let filter = {};
+//   if (req.params.tourId) filter = { tour: req.params.tourId };
+//   const reviews = await Review.find(filter);
 
-  res.status(200).json({
-    status: 'success',
-    results: reviews.length,
-    data: {
-      reviews,
-    },
-  });
-});
-
-module.exports = { createReview, getAllReviews };
+//   res.status(200).json({
+//     status: 'success',
+//     results: reviews.length,
+//     data: {
+//       reviews,
+//     },
+//   });
+// });

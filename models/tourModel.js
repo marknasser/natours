@@ -139,7 +139,7 @@ tourSchema.pre('save', function (next) {
   //DOCUMENT MIDDLEWARE: runs before only .save() and .create()  >not> .insertMany() or update
   //will be called before an actual doc is being saved to database and we we have access to this document
   // console.log(this);
-  this.sulg = slugify(this.name, { lower: true });
+  this.slug = slugify(this.name, { lower: true });
   next();
 });
 

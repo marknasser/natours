@@ -8,9 +8,10 @@ module.exports = (err, req, res, next) => {
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV.trim() === 'development') {
-    sendErrorDev(err, res);
+    sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV.trim() === 'production') {
     let error = { ...err, name: err.name };
+    error.message = err.message;
     // console.log(error);
     if (error.name === 'CastError') {
       error = handleCastErrorBD(error);
@@ -29,7 +30,7 @@ module.exports = (err, req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       error = handleTokenExpiredErrorJWT(error); //pass the err that mongoose created and then return new error created with our AppError Class so it will mark as operational error
     }
-    sendErrorPro(error, res);
+    sendErrorPro(error, req, res);
     // console.log(error);
     // res.status(500).json({
     //   status: 'error',
@@ -61,33 +62,57 @@ function handleTokenExpiredErrorJWT(error) {
   return new AppError(message, 401);
 }
 
-function sendErrorDev(err, res) {
-  res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message,
-    error: err,
-    stack: err.stack,
-  });
-}
-
-function sendErrorPro(err, res) {
-  if (err.isOperational) {
-    //Operational error, trusted error : send message to client
-    //we're cheking out about the error that we created using appError class which have isOpertional property
+function sendErrorDev(err, req, res) {
+  if (req.originalUrl.startsWith('/api')) {
+    //API
     res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
+      error: err,
+      stack: err.stack,
     });
   } else {
+    // render website page
+    res.status(err.statusCode).render('error', {
+      title: 'Something went wrong',
+      msg: err.message,
+    });
+  }
+}
+
+function sendErrorPro(err, req, res) {
+  if (req.originalUrl.startsWith('/api')) {
+    //api
+    if (err.isOperational) {
+      //Operational error, trusted error : send message to client
+      //we're cheking out about the error that we created using appError class which have isOpertional property
+      return res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message,
+      });
+    }
     //[1]log error
-    console.error('Error', err);
+    console.error('Error 😵', err);
     //[2]send generic message
     //programming error, untrusted error :don't leak to client
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'something went wrong',
     });
   }
+
+  //renderd
+  if (err.isOperational) {
+    return res.status(err.statusCode).render('error', {
+      title: 'Something went wrong',
+      msg: err.message,
+    });
+  }
+  console.error('Error 😵', err);
+  return res.status(err.statusCode).render('error', {
+    title: 'Something went wrong',
+    msg: 'Please try again later  ',
+  });
 }
 /*   
 there are three kind of errors come from mongoose and we need to mark them as opertional error then we can send a meaningful error to the client in production

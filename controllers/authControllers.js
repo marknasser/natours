@@ -73,7 +73,11 @@ const protect = catchAsync(async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
+    //authanticate user via token sent by header
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    //authanticate user via token sent by cookies
+    token = req.cookies.jwt;
   }
 
   if (!token) {
@@ -102,6 +106,7 @@ const protect = catchAsync(async (req, res, next) => {
   }
   //Grant access to proteted route
   req.user = currentUser; //put the user in the body
+  res.locals.user = currentUser;
   next();
 });
 
@@ -217,6 +222,44 @@ const updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(currentUser, 200, res);
 });
 
+//only for render pages will be no error
+const isLoggedIn = async (req, res, next) => {
+  if (req.cookies.jwt) {
+    try {
+      // 1) verify the token
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+      // 2) if the user still exist
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+      // 3) if user recently change his pass
+      const isPassChangedAfterJWTIssued = currentUser.changedPasswordAfter(
+        decoded.iat
+      );
+      if (isPassChangedAfterJWTIssued) {
+        return next();
+      }
+      //there is an loged in user
+      res.locals.user = currentUser;
+      return next();
+    } catch (error) {
+      return next();
+    }
+  }
+  next();
+};
+
+const logout = (req, res) => {
+  res.cookie('jwt', 'dummy token', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ status: 'success' });
+};
 module.exports = {
   signToken,
   signup,
@@ -226,4 +269,6 @@ module.exports = {
   resetPassword,
   protect,
   updatePassword,
+  isLoggedIn,
+  logout,
 };

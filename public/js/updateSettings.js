@@ -60,15 +60,13 @@ const updateSettings = async (data, type) => {
 if (updatingForm)
   updatingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    // const form = new FormData();
-    // form.append('name', document.getElementById('name').value);
-    // form.append('email', document.getElementById('email').value);
-    // form.append('photo', document.getElementById('photo').files[0]);
+    const form = new FormData();
+    form.append('name', document.getElementById('name').value);
+    form.append('email', document.getElementById('email').value);
+    form.append('photo', document.getElementById('photo').files[0]);
     //IMP AT multi-part form data at fetch we dont need to specify data content-type  we make body:data only (IMP)-->So we don't need to specify 'content-type' when we send a fetch request.
-    // console.log(form);
-    updateSettings({ name, email }, 'data');
+    console.log(form);
+    updateSettings(form, 'data');
   });
 
 if (updatingPassword)

@@ -86,7 +86,7 @@ app.use((req, res, next) => {
   // at the end of any middleware  fun should call if we not the app will stuck at this point
   // a middleware func that used to manipulate the req object
   req.requestTime = new Date().toISOString();
-  console.log(req.cookies);
+  // console.log(req.cookies);
   next();
 });
 

@@ -1,21 +1,66 @@
 const express = require('express');
-const fs = require('fs');
+
 const {
   getAllTours,
   createTour,
   getTour,
   updateTour,
   deleteTour,
-  checkID,
-  checkBody,
+  aliasTopTours,
+  getTourStats,
+  getMonthlyPlan,
+  getTourWithin,
+  getDistances,
+  uploadTourImages,
+  resizeTourImages,
 } = require('../controllers/tourControllers');
+const reviewController = require('../controllers/reviewController');
+const reviewRouter = require('./reviewRouter');
 
+const { protect, restrictTo } = require('../controllers/authControllers');
 const router = express.Router(); // [1]create route to use as a sub app
 
-router.param('id', checkID); // a middle where for ching the id before any of the resonses
+// router
+//   .route('/:tourId/reviews')
+//   .post(protect, restrictTo('user'), reviewController.createReview);
 
-router.route('/').get(getAllTours).post(checkBody, createTour);
-router.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
+// nested Route
+// post /tour/:ToureId/reviews
+// get /tour/:ToureId/reviews
+// get /tour/:ToureId/reviews/:reviewID
+//express feature merge param
+
+router.use('/:tourId/reviews', reviewRouter);
+
+router.route('/top-5-cheap').get(aliasTopTours, getAllTours); // a middle where for manipulate the req.query in order to create an Alias route for a common request
+router.route('/tour-stats').get(getTourStats);
+router
+  .route('/monthly-plan/:year')
+  .get(protect, restrictTo('admin', 'lead-guide', 'guide'), getMonthlyPlan);
+
+router
+  .route('/')
+  .get(getAllTours)
+  .post(protect, restrictTo('admin', 'lead-guide'), createTour);
+router
+  .route('/:id')
+  .get(getTour)
+  .patch(
+    protect,
+    restrictTo('admin', 'lead-guide'),
+    uploadTourImages,
+    resizeTourImages,
+    updateTour
+  )
+  .delete(protect, restrictTo('admin', 'lead-guide'), deleteTour);
+
+router.route('/distance/:coordinats/unit/:unit').get(getDistances);
+
+router
+  .route('/tours-within/:distance/center/:coordinats/unit/:unit')
+  .get(getTourWithin);
+// /tours-within?distance=233&center=-40,40&unit=ml
+// /tours-within/distance/233/center/-40,40/unit/ml
 
 module.exports = router;
 // ___________ Routs Routing : determine how an application responds to a certain URL request
